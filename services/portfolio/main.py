@@ -17,6 +17,10 @@ class PortfolioService:
     async def on_tick(self, tick):
         self.last_market_price[tick.symbol] = tick.last
 
+        for strategy, position in self.position_state.items():
+            if position.get(tick.symbol, 0.0) != 0.0:
+                await self.publish_portfolio_snapshot(strategy, tick.symbol)
+
     async def on_fill(self, fill):
         strategy_id = fill.strategy_id
         symbol = fill.symbol
@@ -29,7 +33,7 @@ class PortfolioService:
         previous_average_cost = self.compute_average_cost_state(
             strategy_id, symbol, quantity, fill_price, previous_position, new_position
         )
-        pnl_delta, realized_pnl = self.compute_realized_pnl_state(
+        self.compute_realized_pnl_state(
             strategy_id,
             symbol,
             quantity,
@@ -37,20 +41,21 @@ class PortfolioService:
             previous_position,
             previous_average_cost,
         )
+        await self.publish_portfolio_snapshot(strategy_id, symbol)
+
+    async def publish_portfolio_snapshot(self, strategy_id, symbol):
+        positions = dict(self.position_state.get(strategy_id, {}))
+        average_cost = dict(self.average_cost_state.get(strategy_id, {}))
+
+        realized_pnl = sum(self.realized_pnl_state.get(strategy_id, {}).values())
         unrealized_pnl = self.compute_unrealized_pnl_state(strategy_id, symbol)
         net_pnl = realized_pnl + unrealized_pnl
-        await self.publish_portfolio_snapshot(
-            strategy_id, pnl_delta, realized_pnl, unrealized_pnl, net_pnl
-        )
 
-    async def publish_portfolio_snapshot(
-        self, strategy_id, pnl_delta, realized_pnl, unrealized_pnl, net_pnl
-    ):
         portfolio_snapshot = PortfolioSnapshot(
             ts_ms=int(time.time() * 1000),
             strategy_id=strategy_id,
-            positions=dict(self.position_state[strategy_id]),
-            average_cost=dict(self.average_cost_state[strategy_id]),
+            positions=positions,
+            average_cost=average_cost,
             realized_pnl=realized_pnl,
             unrealized_pnl=unrealized_pnl,
             net_pnl=net_pnl,
@@ -58,7 +63,7 @@ class PortfolioService:
 
         await self.bus.publish(TOPIC.PORTFOLIO, portfolio_snapshot)
         print(
-            f"[portfolio] {strategy_id} net_pnl={net_pnl} pnl_delta={pnl_delta} realized={realized_pnl} unreal={unrealized_pnl}"
+            f"[portfolio] {strategy_id} net_pnl={net_pnl} realized={realized_pnl} unreal={unrealized_pnl}"
         )
 
     def compute_position_state(self, strategy_id, symbol, quantity):
@@ -75,8 +80,9 @@ class PortfolioService:
             strategy_id, {}
         )
         previous_average_cost = average_cost_state_strategy.setdefault(symbol, 0.0)
-        if previous_position == 0:
-            average_cost_state_strategy[symbol] = fill_price
+
+        if new_position == 0:
+            average_cost_state_strategy.pop(symbol, None)
         elif (previous_position > 0 and quantity > 0) or (
             previous_position < 0 and quantity < 0
         ):
@@ -84,8 +90,10 @@ class PortfolioService:
                 previous_average_cost * abs(previous_position)
                 + fill_price * abs(quantity)
             ) / abs(new_position)
-        elif (previous_position < 0 and new_position > 0) or (
-            previous_position > 0 and new_position < 0
+        elif (
+            (previous_position == 0)
+            or (previous_position < 0 and new_position > 0)
+            or (previous_position > 0 and new_position < 0)
         ):
             average_cost_state_strategy[symbol] = fill_price
 
@@ -108,7 +116,7 @@ class PortfolioService:
             or (previous_position > 0 and quantity > 0)
             or (previous_position < 0 and quantity < 0)
         ):
-            return 0.0, 0.0
+            return 0.0, realized_by_strategy[symbol]
 
         closed_qty = min(abs(previous_position), abs(quantity))
 
@@ -122,22 +130,13 @@ class PortfolioService:
 
     def compute_unrealized_pnl_state(self, strategy_id, symbol):
         new_position = self.position_state.get(strategy_id, {}).get(symbol, 0.0)
-        last_market_price = self.last_market_price.get(symbol, 0.0)
-        if not new_position or not last_market_price:
+        last_market_price = self.last_market_price.get(symbol)
+        if new_position == 0 or last_market_price is None:
             return 0.0
-
         computed_average_cost = self.average_cost_state.get(strategy_id, {}).get(
             symbol, 0.0
         )
-        if new_position > 0:
-            return (
-                self.last_market_price[symbol] - computed_average_cost
-            ) * new_position
-        elif new_position < 0:
-            return (computed_average_cost - self.last_market_price[symbol]) * abs(
-                new_position
-            )
-        return 0.0
+        return (last_market_price - computed_average_cost) * new_position
 
 
 async def main():

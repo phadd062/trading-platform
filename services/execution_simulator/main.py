@@ -17,7 +17,7 @@ class ExecutionSimulator:
 
     async def order_handler(self, order):
         tick = self.latest_tick.get(order.symbol)
-        price = tick.ask if order.side.value == Side.BUY else tick.bid
+        price = tick.ask if order.side == Side.BUY else tick.bid
         fill = Fill(
             ts_ms=int(time.time() * 1000),
             order_id=order.order_id,
