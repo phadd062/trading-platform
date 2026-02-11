@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: tp_postgres
+    environment:
+      POSTGRES_USER: dev_tp_user
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: tp_database
+    ports:
+      - "5433:5432"
+    volumes:
+      - tp_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8
+    container_name: tp_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  nats:
+    image: nats:2.12
+    container_name: tp_nats
+    command: ["-js"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8222/varz > /dev/null || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  tp_pgdata:

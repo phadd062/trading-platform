@@ -1,0 +1,154 @@
+import asyncio
+import time
+
+from libs.contracts.events import Fill, Tick, PortfolioSnapshot, Side
+from libs.eventbus.nats_bus import NatsEventBus
+from libs.topics import TOPIC
+
+
+class PortfolioService:
+    def __init__(self, bus):
+        self.bus = bus
+        self.position_state = {}
+        self.average_cost_state = {}
+        self.realized_pnl_state = {}
+        self.last_market_price = {}
+
+    async def on_tick(self, tick):
+        self.last_market_price[tick.symbol] = tick.last
+
+    async def on_fill(self, fill):
+        strategy_id = fill.strategy_id
+        symbol = fill.symbol
+        quantity = fill.quantity if fill.side == Side.BUY else -fill.quantity
+        fill_price = fill.price
+
+        previous_position, new_position = self.compute_position_state(
+            strategy_id, symbol, quantity
+        )
+        previous_average_cost = self.compute_average_cost_state(
+            strategy_id, symbol, quantity, fill_price, previous_position, new_position
+        )
+        pnl_delta, realized_pnl = self.compute_realized_pnl_state(
+            strategy_id,
+            symbol,
+            quantity,
+            fill_price,
+            previous_position,
+            previous_average_cost,
+        )
+        unrealized_pnl = self.compute_unrealized_pnl_state(strategy_id, symbol)
+        net_pnl = realized_pnl + unrealized_pnl
+        await self.publish_portfolio_snapshot(
+            strategy_id, pnl_delta, realized_pnl, unrealized_pnl, net_pnl
+        )
+
+    async def publish_portfolio_snapshot(
+        self, strategy_id, pnl_delta, realized_pnl, unrealized_pnl, net_pnl
+    ):
+        portfolio_snapshot = PortfolioSnapshot(
+            ts_ms=int(time.time() * 1000),
+            strategy_id=strategy_id,
+            positions=dict(self.position_state[strategy_id]),
+            average_cost=dict(self.average_cost_state[strategy_id]),
+            realized_pnl=realized_pnl,
+            unrealized_pnl=unrealized_pnl,
+            net_pnl=net_pnl,
+        )
+
+        await self.bus.publish(TOPIC.PORTFOLIO, portfolio_snapshot)
+        print(
+            f"[portfolio] {strategy_id} net_pnl={net_pnl} pnl_delta={pnl_delta} realized={realized_pnl} unreal={unrealized_pnl}"
+        )
+
+    def compute_position_state(self, strategy_id, symbol, quantity):
+        position_state_strategy = self.position_state.setdefault(strategy_id, {})
+        previous_position = position_state_strategy.get(symbol, 0.0)
+        new_position = previous_position + quantity
+        position_state_strategy[symbol] = new_position
+        return previous_position, new_position
+
+    def compute_average_cost_state(
+        self, strategy_id, symbol, quantity, fill_price, previous_position, new_position
+    ):
+        average_cost_state_strategy = self.average_cost_state.setdefault(
+            strategy_id, {}
+        )
+        previous_average_cost = average_cost_state_strategy.setdefault(symbol, 0.0)
+        if previous_position == 0:
+            average_cost_state_strategy[symbol] = fill_price
+        elif (previous_position > 0 and quantity > 0) or (
+            previous_position < 0 and quantity < 0
+        ):
+            average_cost_state_strategy[symbol] = (
+                previous_average_cost * abs(previous_position)
+                + fill_price * abs(quantity)
+            ) / abs(new_position)
+        elif (previous_position < 0 and new_position > 0) or (
+            previous_position > 0 and new_position < 0
+        ):
+            average_cost_state_strategy[symbol] = fill_price
+
+        return previous_average_cost
+
+    def compute_realized_pnl_state(
+        self,
+        strategy_id,
+        symbol,
+        quantity,
+        fill_price,
+        previous_position,
+        previous_average_cost,
+    ):
+        realized_by_strategy = self.realized_pnl_state.setdefault(strategy_id, {})
+        realized_by_strategy.setdefault(symbol, 0.0)
+
+        if (
+            previous_position == 0
+            or (previous_position > 0 and quantity > 0)
+            or (previous_position < 0 and quantity < 0)
+        ):
+            return 0.0, 0.0
+
+        closed_qty = min(abs(previous_position), abs(quantity))
+
+        if previous_position > 0:
+            pnl_delta = (fill_price - previous_average_cost) * closed_qty
+        else:
+            pnl_delta = (previous_average_cost - fill_price) * closed_qty
+
+        realized_by_strategy[symbol] += pnl_delta
+        return pnl_delta, realized_by_strategy[symbol]
+
+    def compute_unrealized_pnl_state(self, strategy_id, symbol):
+        new_position = self.position_state.get(strategy_id, {}).get(symbol, 0.0)
+        last_market_price = self.last_market_price.get(symbol, 0.0)
+        if not new_position or not last_market_price:
+            return 0.0
+
+        computed_average_cost = self.average_cost_state.get(strategy_id, {}).get(
+            symbol, 0.0
+        )
+        if new_position > 0:
+            return (
+                self.last_market_price[symbol] - computed_average_cost
+            ) * new_position
+        elif new_position < 0:
+            return (computed_average_cost - self.last_market_price[symbol]) * abs(
+                new_position
+            )
+        return 0.0
+
+
+async def main():
+    bus = NatsEventBus()
+    portfolio_service = PortfolioService(bus)
+    await bus.connect()
+    await bus.subscribe(TOPIC.TICKS, Tick, portfolio_service.on_tick)
+    await bus.subscribe(TOPIC.FILLS, Fill, portfolio_service.on_fill)
+    stop = asyncio.Event()
+    await stop.wait()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
