@@ -59,7 +59,6 @@ class Fill(EventModel):
 
 class PortfolioSnapshot(EventModel):
     type: str = Field(default="PortfolioSnapshot", frozen=True)
-    ts_ms: int
     strategy_id: str
     positions: dict[str, float]
     average_cost: dict[str, float]

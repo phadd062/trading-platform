@@ -4,4 +4,5 @@ class TOPIC:
     ORDERS = "orders"
     FILLS = "fills"
     PORTFOLIO = "portfolio"
+    RISKDECISION = "risk_decision"
     RISKSTATUS = "risk_status"

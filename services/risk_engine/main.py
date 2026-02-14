@@ -2,7 +2,14 @@ import asyncio
 import time
 import uuid
 
-from libs.contracts.events import PortfolioSnapshot, OrderIntent, Order
+from libs.contracts.events import (
+    Side,
+    Tick,
+    PortfolioSnapshot,
+    OrderIntent,
+    Order,
+    RiskDecision,
+)
 from libs.eventbus.nats_bus import NatsEventBus
 from libs.topics import TOPIC
 
@@ -10,32 +17,43 @@ from libs.topics import TOPIC
 class RiskEngine:
     def __init__(self, bus):
         self.bus = bus
+        self.last_market_price = {}
+        self.snapshots = {}
 
-        self.positions = {}
-        self.average_cost = {}
-        self.net_pnl = 0.0
-
-        self.kill_switch = {}
-        self.max_abs_pos_per_symbol = 17.0
+        self.kill_switch = set()
+        self.max_abs_pos_per_symbol = 5.0
         self.max_gross_exposure = 10_000.0
         self.max_loss = -200.0
 
+    async def on_tick(self, tick):
+        self.last_market_price[tick.symbol] = tick.last
+
     async def portfolio_snapshot(self, portfolio_snapshot):
-        self.positions = portfolio_snapshot.positions
-        self.average_cost = portfolio_snapshot.average_cost
-        self.net_pnl = portfolio_snapshot.net_pnl
+        self.snapshots[portfolio_snapshot.strategy_id] = portfolio_snapshot
 
     async def risk_gate(self, order_intent):
-        reject = (
-            self.max_pos(order_intent)
-            and self.max_exposure(order_intent)
-            and self.max_loss_calc()
+        reasons = []
+        if self.max_loss_calc(order_intent):
+            reasons.append("max_loss")
+        if self.max_pos(order_intent):
+            reasons.append("max_pos")
+        if self.max_exposure(order_intent):
+            reasons.append("max_exposure")
+
+        reject = len(reasons) > 0
+
+        risk_decision = RiskDecision(
+            ts_ms=int(time.time() * 1000),
+            intent_id=order_intent.intent_id,
+            approved=not reject,
+            reasons=reasons,
+            kill_switch=False,
         )
 
+        await self.bus.publish(TOPIC.RISKDECISION, risk_decision)
+
         if reject:
-            print(
-                f"[risk] REJECT intent_id={order_intent.intent_id} -> order_id={order.order_id}"
-            )
+            print(f"[risk] REJECT intent_id={order_intent.intent_id}")
             return
 
         order = Order(
@@ -55,26 +73,41 @@ class RiskEngine:
         )
 
     def max_pos(self, order_intent):
-        return (
-            self.max_abs_pos_per_symbol
-            > self.positions.get(order_intent.strategy_id, {}).get(
+        if order_intent.side == Side.SELL:
+            return self.max_abs_pos_per_symbol < abs(
+                self.snapshots[order_intent.strategy_id].positions.get(
+                    order_intent.symbol, 0.0
+                )
+                - order_intent.quantity
+            )
+        return self.max_abs_pos_per_symbol < abs(
+            self.snapshots[order_intent.strategy_id].positions.get(
                 order_intent.symbol, 0.0
             )
             + order_intent.quantity
         )
 
     def max_exposure(self, order_intent):
-        net_expore = sum(self.average_cost.get(order_intent.strategy_id, {}).values())
-        return self.max_gross_exposure < net_expore
+        net_exposure = (
+            abs(
+                self.snapshots[order_intent.strategy_id].positions.get(
+                    order_intent.symbol, 0.0
+                )
+                + order_intent.quantity
+            )
+            * self.last_market_price[order_intent.symbol]
+        )
+        return self.max_gross_exposure < net_exposure
 
-    def max_loss_calc(self):
-        return self.net_pnl < -self.max_loss
+    def max_loss_calc(self, order_intent):
+        return self.snapshots[order_intent.strategy_id].net_pnl < self.max_loss
 
 
 async def main():
     bus = NatsEventBus()
     risk = RiskEngine(bus)
     await bus.connect()
+    await bus.subscribe(TOPIC.TICKS, Tick, risk.on_tick)
     await bus.subscribe(TOPIC.PORTFOLIO, PortfolioSnapshot, risk.portfolio_snapshot)
     await bus.subscribe(TOPIC.ORDERINTENT, OrderIntent, risk.risk_gate)
     stop = asyncio.Event()
