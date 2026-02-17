@@ -4,6 +4,7 @@ import time
 from libs.contracts.events import Fill, Tick, PortfolioSnapshot, Side
 from libs.eventbus.nats_bus import NatsEventBus
 from libs.topics import TOPIC
+from libs.strategy_id import STRATEGYID
 
 
 class PortfolioService:
@@ -42,6 +43,19 @@ class PortfolioService:
             previous_average_cost,
         )
         await self.publish_portfolio_snapshot(strategy_id, symbol)
+
+    async def publish_initial(self, strategy_id):
+        portfolio_snapshot = PortfolioSnapshot(
+            ts_ms=int(time.time() * 1000),
+            strategy_id=strategy_id,
+            positions={},
+            average_cost={},
+            realized_pnl=0.0,
+            unrealized_pnl=0.0,
+            net_pnl=0.0,
+        )
+        await self.bus.publish(TOPIC.PORTFOLIO, portfolio_snapshot)
+        print(f"[portfolio] initial snapshot published strategy_id={strategy_id}")
 
     async def publish_portfolio_snapshot(self, strategy_id, symbol):
         positions = dict(self.position_state.get(strategy_id, {}))
@@ -145,6 +159,9 @@ async def main():
     await bus.connect()
     await bus.subscribe(TOPIC.TICKS, Tick, portfolio_service.on_tick)
     await bus.subscribe(TOPIC.FILLS, Fill, portfolio_service.on_fill)
+
+    await portfolio_service.publish_initial(STRATEGYID.MOMENTUM)
+
     stop = asyncio.Event()
     await stop.wait()
 

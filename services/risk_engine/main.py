@@ -33,11 +33,18 @@ class RiskEngine:
 
     async def risk_gate(self, order_intent):
         reasons = []
-        if self.max_loss_calc(order_intent):
+        snapshot = self.snapshots.get(order_intent.strategy_id)
+        reject = False
+
+        if not snapshot:
+            reject = True
+            reasons.append("no_snapshot")
+
+        if not reject and self.max_loss_calc(order_intent):
             reasons.append("max_loss")
-        if self.max_pos(order_intent):
+        if not reject and self.max_pos(order_intent):
             reasons.append("max_pos")
-        if self.max_exposure(order_intent):
+        if not reject and self.max_exposure(order_intent):
             reasons.append("max_exposure")
 
         reject = len(reasons) > 0
@@ -53,7 +60,7 @@ class RiskEngine:
         await self.bus.publish(TOPIC.RISKDECISION, risk_decision)
 
         if reject:
-            print(f"[risk] REJECT intent_id={order_intent.intent_id}")
+            print(f"[risk] REJECT intent_id={order_intent.intent_id} reasons={reasons}")
             return
 
         order = Order(
@@ -73,34 +80,33 @@ class RiskEngine:
         )
 
     def max_pos(self, order_intent):
-        if order_intent.side == Side.SELL:
-            return self.max_abs_pos_per_symbol < abs(
-                self.snapshots[order_intent.strategy_id].positions.get(
-                    order_intent.symbol, 0.0
-                )
-                - order_intent.quantity
-            )
-        return self.max_abs_pos_per_symbol < abs(
-            self.snapshots[order_intent.strategy_id].positions.get(
-                order_intent.symbol, 0.0
-            )
-            + order_intent.quantity
-        )
+        return self.max_abs_pos_per_symbol < abs(self.proposed_position(order_intent))
 
     def max_exposure(self, order_intent):
         net_exposure = (
-            abs(
-                self.snapshots[order_intent.strategy_id].positions.get(
-                    order_intent.symbol, 0.0
-                )
-                + order_intent.quantity
-            )
+            abs(self.proposed_position(order_intent))
             * self.last_market_price[order_intent.symbol]
         )
         return self.max_gross_exposure < net_exposure
 
     def max_loss_calc(self, order_intent):
         return self.snapshots[order_intent.strategy_id].net_pnl < self.max_loss
+
+    def proposed_position(self, order_intent):
+        if order_intent.side == Side.SELL:
+            return (
+                self.snapshots[order_intent.strategy_id].positions.get(
+                    order_intent.symbol, 0.0
+                )
+                - order_intent.quantity
+            )
+
+        return (
+            self.snapshots[order_intent.strategy_id].positions.get(
+                order_intent.symbol, 0.0
+            )
+            + order_intent.quantity
+        )
 
 
 async def main():
