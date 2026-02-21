@@ -1,2 +1,3 @@
 class STRATEGYID:
-    MOMENTUM = "v1_momentum"
+    MOMENTUM = "momentum"
+    RSI = "rsi"

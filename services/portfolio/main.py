@@ -1,10 +1,10 @@
 import asyncio
 import time
 
-from libs.contracts.events import Fill, Tick, PortfolioSnapshot, Side
+from libs.contracts.events import Fill, PortfolioSnapshot, Side, Tick
 from libs.eventbus.nats_bus import NatsEventBus
-from libs.topics import TOPIC
 from libs.strategy_id import STRATEGYID
+from libs.topics import TOPIC
 
 
 class PortfolioService:
@@ -161,6 +161,7 @@ async def main():
     await bus.subscribe(TOPIC.FILLS, Fill, portfolio_service.on_fill)
 
     await portfolio_service.publish_initial(STRATEGYID.MOMENTUM)
+    await portfolio_service.publish_initial(STRATEGYID.RSI)
 
     stop = asyncio.Event()
     await stop.wait()

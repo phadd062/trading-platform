@@ -1,3 +1,6 @@
 fastapi[standard]
 nats-py
+pyjwt
+pwdlib[argon2]
 pydantic
+ipython

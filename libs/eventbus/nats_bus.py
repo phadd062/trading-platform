@@ -1,10 +1,13 @@
 import json
-from .base import EventBus
+import os
+
 from nats.aio.client import Client as NATS
+
+from .base import EventBus
 
 
 class NatsEventBus(EventBus):
-    def __init__(self, url = "nats://localhost:4222"):
+    def __init__(self, url = os.getenv("NATS_URL")):
         self.url = url
         self.nc = NATS()
 

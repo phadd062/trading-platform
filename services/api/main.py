@@ -1,9 +1,16 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-from libs.contracts.events import PortfolioSnapshot, RiskDecision, Order
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from libs.contracts.events import Order, PortfolioSnapshot, RiskDecision
 from libs.eventbus.nats_bus import NatsEventBus
 from libs.topics import TOPIC
-from contextlib import asynccontextmanager
+
+from .auth import get_current_user
+from .router.order import order_router
+from .router.portfolio import portfolio_router
+from .router.token import token_router
 
 
 class API:
@@ -41,19 +48,19 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(token_router, prefix="/token")
+app.include_router(portfolio_router, dependencies=[Depends(get_current_user)])
+app.include_router(order_router)
 
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
-@app.get("/portfolio/{strategy_id}")
-async def get_portfolio(strategy_id):
-    snap = app.state.api.portfolios.get(strategy_id)
-    return snap.model_dump() if snap else {}
-
-
-@app.get("/orders")
-async def get_risk():
-    return [order.model_dump() for order in app.state.api.orders]
-
-
-@app.get("/risk")
-async def get_risk():
-    return [risk.model_dump() for risk in app.state.api.risk_events]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

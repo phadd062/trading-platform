@@ -2,14 +2,8 @@ import asyncio
 import time
 import uuid
 
-from libs.contracts.events import (
-    Side,
-    Tick,
-    PortfolioSnapshot,
-    OrderIntent,
-    Order,
-    RiskDecision,
-)
+from libs.contracts.events import (Order, OrderIntent, PortfolioSnapshot,
+                                   RiskDecision, Side, Tick)
 from libs.eventbus.nats_bus import NatsEventBus
 from libs.topics import TOPIC
 

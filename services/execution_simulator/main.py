@@ -1,8 +1,8 @@
 import asyncio
-import uuid
 import time
+import uuid
 
-from libs.contracts.events import Tick, Fill, Order, Side
+from libs.contracts.events import Fill, Order, Side, Tick
 from libs.eventbus.nats_bus import NatsEventBus
 from libs.topics import TOPIC
 
