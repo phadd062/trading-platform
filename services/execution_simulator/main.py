@@ -1,6 +1,4 @@
 import asyncio
-import time
-import uuid
 
 from libs.contracts.events import Fill, Order, Side, Tick
 from libs.eventbus.nats_bus import NatsEventBus
@@ -19,9 +17,7 @@ class ExecutionSimulator:
         tick = self.latest_tick.get(order.symbol)
         price = tick.ask if order.side == Side.BUY else tick.bid
         fill = Fill(
-            ts_ms=int(time.time() * 1000),
             order_id=order.order_id,
-            fill_id=str(uuid.uuid4()),
             strategy_id=order.strategy_id,
             symbol=order.symbol,
             side=order.side,

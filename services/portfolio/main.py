@@ -1,16 +1,17 @@
 import asyncio
-import time
 
 from libs.contracts.events import Fill, PortfolioSnapshot, Side, Tick
 from libs.eventbus.nats_bus import NatsEventBus
 from libs.strategy_id import STRATEGYID
 from libs.topics import TOPIC
 
+from collections import defaultdict
+
 
 class PortfolioService:
     def __init__(self, bus):
         self.bus = bus
-        self.position_state = {}
+        self.position_state = defaultdict(dict)
         self.average_cost_state = {}
         self.realized_pnl_state = {}
         self.last_market_price = {}
@@ -46,7 +47,6 @@ class PortfolioService:
 
     async def publish_initial(self, strategy_id):
         portfolio_snapshot = PortfolioSnapshot(
-            ts_ms=int(time.time() * 1000),
             strategy_id=strategy_id,
             positions={},
             average_cost={},
@@ -66,7 +66,6 @@ class PortfolioService:
         net_pnl = realized_pnl + unrealized_pnl
 
         portfolio_snapshot = PortfolioSnapshot(
-            ts_ms=int(time.time() * 1000),
             strategy_id=strategy_id,
             positions=positions,
             average_cost=average_cost,
@@ -81,7 +80,7 @@ class PortfolioService:
         )
 
     def compute_position_state(self, strategy_id, symbol, quantity):
-        position_state_strategy = self.position_state.setdefault(strategy_id, {})
+        position_state_strategy = self.position_state[strategy_id]
         previous_position = position_state_strategy.get(symbol, 0.0)
         new_position = previous_position + quantity
         position_state_strategy[symbol] = new_position

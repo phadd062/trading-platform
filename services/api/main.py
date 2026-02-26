@@ -50,7 +50,7 @@ async def lifespan(app):
 app = FastAPI(lifespan=lifespan)
 app.include_router(token_router, prefix="/token")
 app.include_router(portfolio_router, dependencies=[Depends(get_current_user)])
-app.include_router(order_router)
+app.include_router(order_router, dependencies=[Depends(get_current_user)])
 
 origins = [
     "http://localhost:5173",

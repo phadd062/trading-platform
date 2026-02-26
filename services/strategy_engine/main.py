@@ -1,7 +1,5 @@
 import asyncio
 import random
-import time
-import uuid
 
 from libs.contracts.events import OrderIntent, Side, Tick
 from libs.eventbus.nats_bus import NatsEventBus
@@ -32,8 +30,6 @@ class StrategyEngine:
             return
 
         order_intent = OrderIntent(
-            ts_ms=int(time.time() * 1000),
-            intent_id=str(uuid.uuid4()),
             strategy_id=random.choice([STRATEGYID.MOMENTUM, STRATEGYID.RSI]),
             symbol=tick.symbol,
             side=side,

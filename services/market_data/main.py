@@ -1,6 +1,5 @@
 import asyncio
 import random
-import time
 
 from libs.contracts.events import Tick
 from libs.eventbus.nats_bus import NatsEventBus
@@ -23,7 +22,6 @@ class MarketData:
                 ask = self.last[symbol] + 0.01
                 tick = Tick(
                     symbol=symbol,
-                    ts_ms=int(time.time() * 1000),
                     bid=bid,
                     ask=ask,
                     last=self.last[symbol],

@@ -3,3 +3,4 @@ nats-py
 pyjwt
 pwdlib[argon2]
 pydantic
+asyncpg

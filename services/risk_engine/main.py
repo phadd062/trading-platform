@@ -1,6 +1,4 @@
 import asyncio
-import time
-import uuid
 
 from libs.contracts.events import (Order, OrderIntent, PortfolioSnapshot,
                                    RiskDecision, Side, Tick)
@@ -44,7 +42,6 @@ class RiskEngine:
         reject = len(reasons) > 0
 
         risk_decision = RiskDecision(
-            ts_ms=int(time.time() * 1000),
             intent_id=order_intent.intent_id,
             approved=not reject,
             reasons=reasons,
@@ -58,8 +55,6 @@ class RiskEngine:
             return
 
         order = Order(
-            ts_ms=int(time.time() * 1000),
-            order_id=str(uuid.uuid4()),
             intent_id=order_intent.intent_id,
             strategy_id=order_intent.strategy_id,
             symbol=order_intent.symbol,
