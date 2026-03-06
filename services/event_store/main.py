@@ -1,6 +1,6 @@
 import asyncio
-import json
 import asyncpg
+import json
 
 from libs.contracts.events import (
     Fill,
@@ -33,16 +33,6 @@ class EventStore:
             raise RuntimeError("DB pool not initialized")
 
         payload = event.model_dump()
-        event_id = payload.get("event_id")
-        ts_ms = payload.get("ts_ms")
-        event_type = payload.get("type")
-        strategy_id = payload.get("strategy_id")
-        intent_id = payload.get("intent_id")
-        order_id = payload.get("order_id")
-        fill_id = payload.get("fill_id")
-        symbol = payload.get("symbol")
-
-        payload_json = json.dumps(payload)
 
         async with self.pool.acquire() as connection:
             await connection.execute(
@@ -51,16 +41,16 @@ class EventStore:
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
                 ON CONFLICT (event_id) DO NOTHING;
                 """,
-                event_id,
-                ts_ms,
+                payload.get("event_id"),
+                payload.get("ts_ms"),
                 topic,
-                event_type,
-                strategy_id,
-                intent_id,
-                order_id,
-                fill_id,
-                symbol,
-                payload_json,
+                payload.get("event_type"),
+                payload.get("strategy_id"),
+                payload.get("intent_id"),
+                payload.get("order_id"),
+                payload.get("fill_id"),
+                payload.get("symbol"),
+                json.dumps(payload),
             )
 
     async def on_tick(self, tick):
@@ -85,7 +75,7 @@ class EventStore:
         await self.write_to_postgres(TOPIC.RISKSTATUS, risk_status)
 
 
-async def main() -> None:
+async def main():
     bus = NatsEventBus()
     store = EventStore(bus)
     await bus.connect()
