@@ -106,6 +106,17 @@ services:
       execution:
         condition: service_started
 
+  replay_market_data:
+    build: .
+    env_file:
+      - .env
+    command: ["python", "-m", "services.replay_market_data.main"]
+    depends_on:
+      nats:
+        condition: service_healthy
+      execution:
+        condition: service_started
+
   api:
     build: .
     env_file:
