@@ -44,7 +44,7 @@ class EventStore:
                 payload.get("event_id"),
                 payload.get("ts_ms"),
                 topic,
-                payload.get("event_type"),
+                payload.get("type"),
                 payload.get("strategy_id"),
                 payload.get("intent_id"),
                 payload.get("order_id"),
