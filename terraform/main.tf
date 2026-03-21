@@ -3,11 +3,17 @@ module "vpc" {
   vpc_cidr = var.vpc_cidr
 }
 
-module "ecs" {
-  source       = "./modules/ecs"
+module "ecr" {
+  source       = "./modules/ecr"
   project_name = var.project_name
-  vpc_id       = module.vpc.vpc_id
-  alb_sg_id    = module.alb.alb_security_group_id
+}
+
+module "ecs" {
+  source             = "./modules/ecs"
+  project_name       = var.project_name
+  vpc_id             = module.vpc.vpc_id
+  alb_sg_id          = module.alb.alb_security_group_id
+  ecr_repository_url = module.ecr.ecr_repository_url
 }
 
 module "rds" {

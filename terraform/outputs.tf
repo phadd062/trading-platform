@@ -25,3 +25,11 @@ output "ecs_security_group_id" {
 output "rds_security_group_id" {
   value = module.rds.rds_security_group_id
 }
+
+output "ecr_repository_url" {
+  value = module.ecr.ecr_repository_url
+}
+
+output "ecs_cw_group_name" {
+  value = module.ecs.ecs_cw_group_name
+}

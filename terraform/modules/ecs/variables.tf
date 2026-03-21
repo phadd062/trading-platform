@@ -9,3 +9,7 @@ variable "vpc_id" {
 variable "alb_sg_id" {
   type = string
 }
+
+variable "ecr_repository_url" {
+  type = string
+}

@@ -17,3 +17,7 @@ output "db_name" {
 output "db_username" {
   value = var.db_username
 }
+
+output "db_secret_arn" {
+  value = aws_secretsmanager_secret.db.arn
+}
