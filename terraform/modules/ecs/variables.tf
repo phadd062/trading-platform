@@ -29,3 +29,7 @@ variable "private_app_subnet_ids" {
 variable "api_target_group_arn" {
   type = string
 }
+
+variable "nats_url" {
+  type = string
+}

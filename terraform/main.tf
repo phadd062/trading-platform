@@ -18,6 +18,7 @@ module "ecs" {
   db_secret_arn          = module.rds.db_secret_arn
   private_app_subnet_ids = module.vpc.private_app_subnet_ids
   api_target_group_arn   = module.alb.aws_lb_target_group_arn
+  nats_url               = "nats://nats:4222"
 }
 
 module "rds" {

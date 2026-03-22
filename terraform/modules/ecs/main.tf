@@ -49,6 +49,21 @@ resource "aws_iam_role_policy_attachment" "task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy" "task_execution_secrets" {
+  name = "${var.project_name}-ecs-task-execution-secrets"
+  role = aws_iam_role.task_execution.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = [var.db_secret_arn]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "task_role" {
   name = "${var.project_name}-ecs-task-role"
   assume_role_policy = jsonencode({
@@ -64,11 +79,6 @@ resource "aws_iam_role" "task_role" {
       },
     ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "task_role_policy" {
-  role       = aws_iam_role.task_role.id
-  policy_arn = "arn:aws:iam::aws:policy/AWSSecretsManagerClientReadOnlyAccess"
 }
 
 resource "aws_ecs_cluster" "ecs" {
@@ -115,10 +125,33 @@ resource "aws_ecs_task_definition" "api" {
         }
       }
 
+      environment = [
+        {
+          name  = "NATS_URL"
+          value = var.nats_url
+        }
+      ]
+
       secrets = [
         {
-          name      = "DB_SECRET_ARN"
-          valueFrom = var.db_secret_arn
+          name      = "POSTGRES_USER"
+          valueFrom = "${var.db_secret_arn}:username::"
+        },
+        {
+          name      = "POSTGRES_PASSWORD"
+          valueFrom = "${var.db_secret_arn}:password::"
+        },
+        {
+          name      = "POSTGRES_DB"
+          valueFrom = "${var.db_secret_arn}:dbname::"
+        },
+        {
+          name      = "POSTGRES_HOST"
+          valueFrom = "${var.db_secret_arn}:host::"
+        },
+        {
+          name      = "POSTGRES_PORT"
+          valueFrom = "${var.db_secret_arn}:port::"
         }
       ]
     }
@@ -126,12 +159,11 @@ resource "aws_ecs_task_definition" "api" {
 }
 
 resource "aws_ecs_service" "api" {
-  name            = "${var.project_name}-api"
-  cluster         = aws_ecs_cluster.ecs.id
-  task_definition = aws_ecs_task_definition.api.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
+  name                               = "${var.project_name}-api"
+  cluster                            = aws_ecs_cluster.ecs.id
+  task_definition                    = aws_ecs_task_definition.api.arn
+  desired_count                      = 1
+  launch_type                        = "FARGATE"
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
