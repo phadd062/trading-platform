@@ -84,3 +84,67 @@ resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
   retention_in_days = 30
 }
+
+resource "aws_ecs_task_definition" "api" {
+  family                   = "${var.project_name}-api"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+  container_definitions = jsonencode([
+    {
+      name      = "api"
+      image     = "${var.ecr_repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8000
+          hostPort      = 8000
+          protocol      = "tcp"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "api"
+        }
+      }
+
+      secrets = [
+        {
+          name      = "DB_SECRET_ARN"
+          valueFrom = var.db_secret_arn
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "api" {
+  name            = "${var.project_name}-api"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.api.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+  health_check_grace_period_seconds  = 60
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = var.api_target_group_arn
+    container_name   = "api"
+    container_port   = 8000
+  }
+}

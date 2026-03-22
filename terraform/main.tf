@@ -9,11 +9,15 @@ module "ecr" {
 }
 
 module "ecs" {
-  source             = "./modules/ecs"
-  project_name       = var.project_name
-  vpc_id             = module.vpc.vpc_id
-  alb_sg_id          = module.alb.alb_security_group_id
-  ecr_repository_url = module.ecr.ecr_repository_url
+  source                 = "./modules/ecs"
+  project_name           = var.project_name
+  vpc_id                 = module.vpc.vpc_id
+  alb_sg_id              = module.alb.alb_security_group_id
+  ecr_repository_url     = module.ecr.ecr_repository_url
+  region                 = var.region
+  db_secret_arn          = module.rds.db_secret_arn
+  private_app_subnet_ids = module.vpc.private_app_subnet_ids
+  api_target_group_arn   = module.alb.aws_lb_target_group_arn
 }
 
 module "rds" {
@@ -28,7 +32,8 @@ module "rds" {
 }
 
 module "alb" {
-  source       = "./modules/alb"
-  project_name = var.project_name
-  vpc_id       = module.vpc.vpc_id
+  source            = "./modules/alb"
+  project_name      = var.project_name
+  vpc_id            = module.vpc.vpc_id
+  public_subnet_ids = module.vpc.public_subnet_ids
 }
