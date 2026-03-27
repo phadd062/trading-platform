@@ -209,6 +209,10 @@ resource "aws_ecs_task_definition" "market_data" {
         {
           name  = "NATS_URL"
           value = local.nats_url
+        },
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
         }
       ]
     }
@@ -263,6 +267,10 @@ resource "aws_ecs_task_definition" "strategy" {
         {
           name  = "NATS_URL"
           value = local.nats_url
+        },
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
         }
       ]
     }
@@ -317,6 +325,10 @@ resource "aws_ecs_task_definition" "risk" {
         {
           name  = "NATS_URL"
           value = local.nats_url
+        },
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
         }
       ]
     }
@@ -371,6 +383,10 @@ resource "aws_ecs_task_definition" "execution" {
         {
           name  = "NATS_URL"
           value = local.nats_url
+        },
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
         }
       ]
     }
@@ -425,6 +441,10 @@ resource "aws_ecs_task_definition" "portfolio" {
         {
           name  = "NATS_URL"
           value = local.nats_url
+        },
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
         }
       ]
     }
@@ -488,6 +508,10 @@ resource "aws_ecs_task_definition" "api" {
         {
           name  = "NATS_URL"
           value = local.nats_url
+        },
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
         }
       ]
 
