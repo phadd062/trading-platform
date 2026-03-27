@@ -1,3 +1,26 @@
+locals {
+  nats_url = "nats://nats.${var.project_name}.internal:4222"
+}
+
+resource "aws_service_discovery_private_dns_namespace" "internal" {
+  name = "${var.project_name}.internal"
+  vpc  = var.vpc_id
+}
+
+resource "aws_service_discovery_service" "nats" {
+  name = "nats"
+
+  dns_config {
+    namespace_id   = aws_service_discovery_private_dns_namespace.internal.id
+    routing_policy = "MULTIVALUE"
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+  }
+}
+
 resource "aws_security_group" "ecs" {
   name        = "${var.project_name}-ecs-sg"
   description = "ECS services security group"
@@ -95,6 +118,333 @@ resource "aws_cloudwatch_log_group" "ecs" {
   retention_in_days = 30
 }
 
+resource "aws_ecs_task_definition" "nats" {
+  family                   = "${var.project_name}-nats"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "nats"
+      image     = "nats:2.12-alpine"
+      essential = true
+      command   = ["-js", "-m", "8222"]
+
+      portMappings = [
+        {
+          containerPort = 4222
+          protocol      = "tcp"
+        },
+        {
+          containerPort = 8222
+          protocol      = "tcp"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "nats"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_ecs_service" "nats" {
+  name            = "${var.project_name}-nats"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.nats.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.nats.arn
+  }
+}
+
+resource "aws_ecs_task_definition" "market_data" {
+  family                   = "${var.project_name}-market-data"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "market-data"
+      image     = "${var.ecr_repository_url}:latest"
+      essential = true
+
+      command = [
+        "python",
+        "-m",
+        "services.market_data.main"
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "market-data"
+        }
+      }
+
+      environment = [
+        {
+          name  = "NATS_URL"
+          value = local.nats_url
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "market_data" {
+  name            = "${var.project_name}-market-data"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.market_data.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+}
+
+resource "aws_ecs_task_definition" "strategy" {
+  family                   = "${var.project_name}-strategy"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "strategy"
+      image     = "${var.ecr_repository_url}:latest"
+      essential = true
+
+      command = [
+        "python",
+        "-m",
+        "services.strategy_engine.main"
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "strategy"
+        }
+      }
+
+      environment = [
+        {
+          name  = "NATS_URL"
+          value = local.nats_url
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "strategy" {
+  name            = "${var.project_name}-strategy"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.strategy.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+}
+
+resource "aws_ecs_task_definition" "risk" {
+  family                   = "${var.project_name}-risk"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "risk"
+      image     = "${var.ecr_repository_url}:latest"
+      essential = true
+
+      command = [
+        "python",
+        "-m",
+        "services.risk_engine.main"
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "risk"
+        }
+      }
+
+      environment = [
+        {
+          name  = "NATS_URL"
+          value = local.nats_url
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "risk" {
+  name            = "${var.project_name}-risk"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.risk.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+}
+
+resource "aws_ecs_task_definition" "execution" {
+  family                   = "${var.project_name}-execution"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "execution"
+      image     = "${var.ecr_repository_url}:latest"
+      essential = true
+
+      command = [
+        "python",
+        "-m",
+        "services.execution_simulator.main"
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "execution"
+        }
+      }
+
+      environment = [
+        {
+          name  = "NATS_URL"
+          value = local.nats_url
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "execution" {
+  name            = "${var.project_name}-execution"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.execution.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+}
+
+resource "aws_ecs_task_definition" "portfolio" {
+  family                   = "${var.project_name}-portfolio"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "portfolio"
+      image     = "${var.ecr_repository_url}:latest"
+      essential = true
+
+      command = [
+        "python",
+        "-m",
+        "services.portfolio.main"
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "portfolio"
+        }
+      }
+
+      environment = [
+        {
+          name  = "NATS_URL"
+          value = local.nats_url
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "portfolio" {
+  name            = "${var.project_name}-portfolio"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.portfolio.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.private_app_subnet_ids
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+}
+
 resource "aws_ecs_task_definition" "api" {
   family                   = "${var.project_name}-api"
   network_mode             = "awsvpc"
@@ -108,6 +458,15 @@ resource "aws_ecs_task_definition" "api" {
       name      = "api"
       image     = "${var.ecr_repository_url}:latest"
       essential = true
+      command = [
+        "uvicorn",
+        "services.api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ]
+
       portMappings = [
         {
           containerPort = 8000
@@ -128,7 +487,7 @@ resource "aws_ecs_task_definition" "api" {
       environment = [
         {
           name  = "NATS_URL"
-          value = var.nats_url
+          value = local.nats_url
         }
       ]
 
@@ -159,14 +518,11 @@ resource "aws_ecs_task_definition" "api" {
 }
 
 resource "aws_ecs_service" "api" {
-  name                               = "${var.project_name}-api"
-  cluster                            = aws_ecs_cluster.ecs.id
-  task_definition                    = aws_ecs_task_definition.api.arn
-  desired_count                      = 1
-  launch_type                        = "FARGATE"
-  deployment_minimum_healthy_percent = 50
-  deployment_maximum_percent         = 200
-  health_check_grace_period_seconds  = 60
+  name            = "${var.project_name}-api"
+  cluster         = aws_ecs_cluster.ecs.id
+  task_definition = aws_ecs_task_definition.api.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
 
   network_configuration {
     subnets          = var.private_app_subnet_ids
