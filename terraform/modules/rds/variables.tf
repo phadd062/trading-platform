@@ -25,3 +25,7 @@ variable "db_username" {
 variable "db_instance_class" {
   type = string
 }
+
+variable "debug_db_client_sg_id" {
+  type=list(string)
+}

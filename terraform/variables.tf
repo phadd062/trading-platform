@@ -22,3 +22,8 @@ variable "db_username" {
   type    = string
   default = "dev_user"
 }
+
+variable "debug_db_client_sg_id" {
+  type  = list(string)
+  default = null
+}

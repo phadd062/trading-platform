@@ -29,6 +29,7 @@ module "rds" {
   db_name               = var.db_name
   db_username           = var.db_username
   db_instance_class     = "db.t4g.micro"
+  debug_db_client_sg_id = var.debug_db_client_sg_id
 }
 
 module "alb" {

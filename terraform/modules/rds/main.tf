@@ -11,6 +11,17 @@ resource "aws_security_group" "rds" {
     security_groups = [var.ecs_sg_id]
   }
 
+  dynamic "ingress" {
+    for_each = var.debug_db_client_sg_id == null ? [] : var.debug_db_client_sg_id
+    content {
+      description     = "Postgres from temporary debug EC2"
+      from_port       = 5432
+      to_port         = 5432
+      protocol        = "tcp"
+      security_groups = [ingress.value]
+    }
+  }
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
