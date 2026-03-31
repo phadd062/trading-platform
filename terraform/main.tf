@@ -30,6 +30,14 @@ module "rds" {
   db_username           = var.db_username
   db_instance_class     = "db.t4g.micro"
   debug_db_client_sg_id = var.debug_db_client_sg_id
+  ec2_sg_group_id       = module.ec2.ec2_sg_group_id
+}
+
+module "ec2" {
+  source               = "./modules/ec2"
+  project_name         = var.project_name
+  private_db_subnet_id = module.vpc.private_db_subnet_ids[0]
+  vpc_id               = module.vpc.vpc_id
 }
 
 module "alb" {

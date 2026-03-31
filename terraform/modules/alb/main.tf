@@ -2,22 +2,22 @@ resource "aws_security_group" "alb" {
   name        = "${var.project_name}-alb-sg"
   description = "ALB security group"
   vpc_id      = var.vpc_id
+}
 
-  ingress {
-    description = "HTTP from internet"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_ingress_rule" "alb_sg_ingress_rule" {
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTP from internet"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+}
 
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_egress_rule" "alb_sg_egress_rule" {
+  security_group_id = aws_security_group.alb.id
+  description       = "Allow all outbound"
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_lb" "main" {

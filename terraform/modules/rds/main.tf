@@ -2,33 +2,16 @@ resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
   description = "RDS Postgres security group"
   vpc_id      = var.vpc_id
+}
 
-  ingress {
-    description     = "Postgres from ECS"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [var.ecs_sg_id]
-  }
-
-  dynamic "ingress" {
-    for_each = var.debug_db_client_sg_id == null ? [] : var.debug_db_client_sg_id
-    content {
-      description     = "Postgres from temporary debug EC2"
-      from_port       = 5432
-      to_port         = 5432
-      protocol        = "tcp"
-      security_groups = [ingress.value]
-    }
-  }
-
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_ingress_rule" "rds_sg_ingress_rule" {
+  for_each                     = { ecs = var.ecs_sg_id, ec2 = var.ec2_sg_group_id }
+  security_group_id            = aws_security_group.rds.id
+  description                  = "Postgres from temporary debug EC2"
+  from_port                    = "5432"
+  to_port                      = "5432"
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = each.value
 }
 
 resource "random_password" "db_creds" {

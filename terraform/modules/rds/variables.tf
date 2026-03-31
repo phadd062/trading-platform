@@ -27,5 +27,9 @@ variable "db_instance_class" {
 }
 
 variable "debug_db_client_sg_id" {
-  type=list(string)
+  type = list(string)
+}
+
+variable "ec2_sg_group_id" {
+  type = string
 }

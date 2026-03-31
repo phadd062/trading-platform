@@ -1,0 +1,11 @@
+variable "project_name" {
+  type = string
+}
+
+variable "private_db_subnet_id" {
+  type = string
+}
+
+variable "vpc_id" {
+  type = string
+}
