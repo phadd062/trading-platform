@@ -122,8 +122,8 @@ resource "aws_ecs_task_definition" "nats" {
   family                   = "${var.project_name}-nats"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -179,8 +179,8 @@ resource "aws_ecs_task_definition" "market_data" {
   family                   = "${var.project_name}-market-data"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -237,8 +237,8 @@ resource "aws_ecs_task_definition" "strategy" {
   family                   = "${var.project_name}-strategy"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -295,8 +295,8 @@ resource "aws_ecs_task_definition" "risk" {
   family                   = "${var.project_name}-risk"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -353,8 +353,8 @@ resource "aws_ecs_task_definition" "execution" {
   family                   = "${var.project_name}-execution"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -411,8 +411,8 @@ resource "aws_ecs_task_definition" "portfolio" {
   family                   = "${var.project_name}-portfolio"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -469,8 +469,8 @@ resource "aws_ecs_task_definition" "event_store" {
   family                   = "${var.project_name}-event-store"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -550,8 +550,8 @@ resource "aws_ecs_task_definition" "replay_market_data" {
   family                   = "${var.project_name}-replay-market-data"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -633,8 +633,8 @@ resource "aws_ecs_task_definition" "api" {
   family                   = "${var.project_name}-api"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "128"
-  memory                   = "256"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task_role.arn
   container_definitions = jsonencode([
