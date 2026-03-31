@@ -86,8 +86,6 @@ async def main():
     await bus.connect()
     await replay_market_data.connect_db()
     await replay_market_data.run_replay_market_data()
-    stop = asyncio.Event()
-    await stop.wait()
 
 
 if __name__ == "__main__":
