@@ -2,7 +2,7 @@ import asyncio
 import random
 
 from libs.contracts.events import OrderIntent, Side, Tick
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.strategy_id import STRATEGYID
 from libs.topics import TOPIC
 
@@ -45,7 +45,7 @@ class StrategyEngine:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     engine = StrategyEngine(bus)
     await bus.connect()
     await bus.subscribe(TOPIC.TICKS, Tick, engine.tick_handler)

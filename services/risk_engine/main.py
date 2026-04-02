@@ -2,7 +2,7 @@ import asyncio
 
 from libs.contracts.events import (Order, OrderIntent, PortfolioSnapshot,
                                    RiskDecision, Side, Tick)
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.topics import TOPIC
 
 
@@ -99,7 +99,7 @@ class RiskEngine:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     risk = RiskEngine(bus)
     await bus.connect()
     await bus.subscribe(TOPIC.TICKS, Tick, risk.on_tick)

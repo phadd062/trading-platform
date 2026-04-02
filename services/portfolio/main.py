@@ -1,7 +1,7 @@
 import asyncio
 
 from libs.contracts.events import Fill, PortfolioSnapshot, Side, Tick
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.strategy_id import STRATEGYID
 from libs.topics import TOPIC
 
@@ -153,7 +153,7 @@ class PortfolioService:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     portfolio_service = PortfolioService(bus)
     await bus.connect()
     await bus.subscribe(TOPIC.TICKS, Tick, portfolio_service.on_tick)

@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from libs.contracts.events import Order, PortfolioSnapshot, RiskDecision
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.topics import TOPIC
 
 from .auth import get_current_user
@@ -36,7 +36,7 @@ class API:
 
 @asynccontextmanager
 async def lifespan(app):
-    bus = NatsEventBus()
+    bus = EventBus()
     api = API(bus)
     app.state.api = api
     await bus.connect()

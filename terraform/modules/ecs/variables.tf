@@ -29,3 +29,11 @@ variable "private_app_subnet_ids" {
 variable "api_target_group_arn" {
   type = string
 }
+
+variable "kinesis_stream_arn" {
+  type = string
+}
+
+variable "kinesis_stream_name" {
+  type = string
+}

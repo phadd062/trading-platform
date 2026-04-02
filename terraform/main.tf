@@ -18,6 +18,8 @@ module "ecs" {
   db_secret_arn          = module.rds.db_secret_arn
   private_app_subnet_ids = module.vpc.private_app_subnet_ids
   api_target_group_arn   = module.alb.aws_lb_target_group_arn
+  kinesis_stream_arn = module.kinesis.kinesis_stream_arn
+  kinesis_stream_name = module.kinesis.kinesis_stream_name
 }
 
 module "rds" {
@@ -45,4 +47,9 @@ module "alb" {
   project_name      = var.project_name
   vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
+}
+
+module "kinesis" {
+  source = "./modules/kinesis"
+  project_name = var.project_name
 }

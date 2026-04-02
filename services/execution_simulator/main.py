@@ -1,7 +1,7 @@
 import asyncio
 
 from libs.contracts.events import Fill, Order, Side, Tick
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.topics import TOPIC
 
 
@@ -33,7 +33,7 @@ class ExecutionSimulator:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     execution_simulator = ExecutionSimulator(bus)
     await bus.connect()
     await bus.subscribe(TOPIC.TICKS, Tick, execution_simulator.tick_handler)

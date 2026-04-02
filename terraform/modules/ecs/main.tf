@@ -1,26 +1,3 @@
-locals {
-  nats_url = "nats://nats.${var.project_name}.internal:4222"
-}
-
-resource "aws_service_discovery_private_dns_namespace" "internal" {
-  name = "${var.project_name}.internal"
-  vpc  = var.vpc_id
-}
-
-resource "aws_service_discovery_service" "nats" {
-  name = "nats"
-
-  dns_config {
-    namespace_id   = aws_service_discovery_private_dns_namespace.internal.id
-    routing_policy = "MULTIVALUE"
-
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
-  }
-}
-
 resource "aws_security_group" "ecs" {
   name        = "${var.project_name}-ecs-sg"
   description = "ECS services security group"
@@ -103,6 +80,29 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
+resource "aws_iam_role_policy" "task_role_kinesis_inline" {
+  name = "${var.project_name}-ecs-task-kinesis-inline"
+  role = aws_iam_role.task_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "KinesisTradingPlatformEventsAccess"
+        Effect = "Allow"
+        Action = [
+          "kinesis:DescribeStreamSummary",
+          "kinesis:ListShards",
+          "kinesis:GetShardIterator",
+          "kinesis:GetRecords",
+          "kinesis:PutRecord",
+          "kinesis:PutRecords"
+        ]
+        Resource = var.kinesis_stream_arn
+      }
+    ]
+  })
+}
+
 resource "aws_ecs_cluster" "ecs" {
   name = var.project_name
 
@@ -115,63 +115,6 @@ resource "aws_ecs_cluster" "ecs" {
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
   retention_in_days = 30
-}
-
-resource "aws_ecs_task_definition" "nats" {
-  family                   = "${var.project_name}-nats"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.task_execution.arn
-  task_role_arn            = aws_iam_role.task_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "nats"
-      image     = "nats:2.12-alpine"
-      essential = true
-      command   = ["-js", "-m", "8222"]
-
-      portMappings = [
-        {
-          containerPort = 4222
-          protocol      = "tcp"
-        },
-        {
-          containerPort = 8222
-          protocol      = "tcp"
-        }
-      ]
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.ecs.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "nats"
-        }
-      }
-    }
-  ])
-}
-
-resource "aws_ecs_service" "nats" {
-  name            = "${var.project_name}-nats"
-  cluster         = aws_ecs_cluster.ecs.id
-  task_definition = aws_ecs_task_definition.nats.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = var.private_app_subnet_ids
-    security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
-  }
-
-  service_registries {
-    registry_arn = aws_service_discovery_service.nats.arn
-  }
 }
 
 resource "aws_ecs_task_definition" "market_data" {
@@ -206,12 +149,20 @@ resource "aws_ecs_task_definition" "market_data" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         }
       ]
     }
@@ -264,12 +215,20 @@ resource "aws_ecs_task_definition" "strategy" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         }
       ]
     }
@@ -322,12 +281,20 @@ resource "aws_ecs_task_definition" "risk" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "TRIM_HORIZON"
         }
       ]
     }
@@ -380,12 +347,20 @@ resource "aws_ecs_task_definition" "execution" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         }
       ]
     }
@@ -438,12 +413,20 @@ resource "aws_ecs_task_definition" "portfolio" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         }
       ]
     }
@@ -496,12 +479,20 @@ resource "aws_ecs_task_definition" "event_store" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         }
       ]
 
@@ -577,12 +568,20 @@ resource "aws_ecs_task_definition" "replay_market_data" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         },
         {
           name  = "REPLAY_START_TS_MS"
@@ -669,12 +668,20 @@ resource "aws_ecs_task_definition" "api" {
 
       environment = [
         {
-          name  = "NATS_URL"
-          value = local.nats_url
-        },
-        {
           name  = "PYTHONUNBUFFERED"
           value = "1"
+        },
+        {
+          name  = "BUS_BACKEND"
+          value = "kinesis"
+        },
+        {
+          name = "KINESIS_STREAM_NAME",
+          value = var.kinesis_stream_name
+        },
+        {
+          name = "KINESIS_ITERATOR_TYPE",
+          value = "LATEST"
         }
       ]
 

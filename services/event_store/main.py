@@ -11,13 +11,13 @@ from libs.contracts.events import (
     RiskStatus,
     Tick,
 )
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.topics import TOPIC
 from libs.helper.postgres import connection_string, DDL
 
 
 class EventStore:
-    def __init__(self, bus: NatsEventBus):
+    def __init__(self, bus):
         self.bus = bus
         self.pool = None
 
@@ -76,7 +76,7 @@ class EventStore:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     store = EventStore(bus)
     await bus.connect()
     await store.connect_db()

@@ -6,7 +6,7 @@ import uuid
 import asyncpg
 
 from libs.contracts.events import Tick
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.helper.postgres import connection_string
 from libs.topics import TOPIC
 
@@ -81,7 +81,7 @@ class ReplayMarketData:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     replay_market_data = ReplayMarketData(bus)
     await bus.connect()
     await replay_market_data.connect_db()

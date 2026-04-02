@@ -2,7 +2,7 @@ import asyncio
 import random
 
 from libs.contracts.events import Tick
-from libs.eventbus.nats_bus import NatsEventBus
+from libs.eventbus.event_bus import EventBus
 from libs.topics import TOPIC
 
 
@@ -33,7 +33,7 @@ class MarketData:
 
 
 async def main():
-    bus = NatsEventBus()
+    bus = EventBus()
     market_data = MarketData(bus)
     await bus.connect()
     await market_data.run_market_data()
