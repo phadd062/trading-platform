@@ -157,11 +157,11 @@ resource "aws_ecs_task_definition" "market_data" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         }
       ]
@@ -223,11 +223,11 @@ resource "aws_ecs_task_definition" "strategy" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         }
       ]
@@ -289,11 +289,11 @@ resource "aws_ecs_task_definition" "risk" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "TRIM_HORIZON"
         }
       ]
@@ -355,11 +355,11 @@ resource "aws_ecs_task_definition" "execution" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         }
       ]
@@ -421,11 +421,11 @@ resource "aws_ecs_task_definition" "portfolio" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         }
       ]
@@ -487,11 +487,11 @@ resource "aws_ecs_task_definition" "event_store" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         }
       ]
@@ -576,11 +576,11 @@ resource "aws_ecs_task_definition" "replay_market_data" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         },
         {
@@ -676,11 +676,11 @@ resource "aws_ecs_task_definition" "api" {
           value = "kinesis"
         },
         {
-          name = "KINESIS_STREAM_NAME",
+          name  = "KINESIS_STREAM_NAME",
           value = var.kinesis_stream_name
         },
         {
-          name = "KINESIS_ITERATOR_TYPE",
+          name  = "KINESIS_ITERATOR_TYPE",
           value = "LATEST"
         }
       ]

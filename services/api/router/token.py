@@ -2,14 +2,19 @@ import jwt
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from services.api.auth import (ALGORITHM, LOGIN_TOKEN_URL, REFRESH_TOKEN_URL,
-                               SECRET_KEY, LoginRequest, authenticate_user,
-                               create_access_token, create_refresh_token)
+from services.api.auth import (
+    ALGORITHM,
+    SECRET_KEY,
+    LoginRequest,
+    authenticate_user,
+    create_access_token,
+    create_refresh_token,
+)
 
 token_router = APIRouter()
 
 
-@token_router.post(LOGIN_TOKEN_URL)
+@token_router.post("/login")
 async def login(login: LoginRequest):
     user = authenticate_user(login.username, login.password)
     if not user:
@@ -29,7 +34,7 @@ class RefreshRequest(BaseModel):
     refresh: str
 
 
-@token_router.post(REFRESH_TOKEN_URL)
+@token_router.post("/refresh")
 async def refresh(renewToken: RefreshRequest):
     payload = jwt.decode(renewToken.refresh, SECRET_KEY, algorithms=ALGORITHM)
     return {"access": create_access_token(subject=payload["sub"])}

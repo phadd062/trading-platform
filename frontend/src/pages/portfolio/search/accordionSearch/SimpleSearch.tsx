@@ -82,7 +82,7 @@ const SimpleSearch = ({
 						}}
 						type="text"
 						maxLength={200}
-						placeholder="Location"
+						placeholder="Strategy"
 					/>
 				</Form.Group>
 
@@ -100,7 +100,7 @@ const SimpleSearch = ({
 						}}
 						type="text"
 						maxLength={200}
-						placeholder="Building"
+						placeholder="Symbol"
 					/>
 				</Form.Group>
 
@@ -115,7 +115,7 @@ const SimpleSearch = ({
 						}}
 						type="text"
 						maxLength={200}
-						placeholder="Address"
+						placeholder="Side"
 					/>
 				</Form.Group>
 
@@ -133,7 +133,7 @@ const SimpleSearch = ({
 						}}
 						type="text"
 						maxLength={200}
-						placeholder="Postal Code"
+						placeholder="Order Type"
 					/>
 				</Form.Group>
 

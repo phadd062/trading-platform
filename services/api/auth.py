@@ -15,18 +15,15 @@ ALGORITHM = "HS512"
 ACCESS_EXPIRE_MIN = 1
 REFRESH_EXPIRE_HOURS = 12
 
-LOGIN_TOKEN_URL = "/login"
-REFRESH_TOKEN_URL = "/refresh"
-
 HASHERS = (Argon2Hasher(),)
 password_hash = PasswordHash(HASHERS)
 
 FAKE_USERS = {
-    "peter": {
-        "username": "peter",
+    "admin": {
+        "username": "admin",
         "full_name": "Peter Haddad",
         "email": "hello@peterhaddad.ca",
-        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$csJbrYjh7KITe60fkjL3Mw$0zj+1BVyRst4bqUGUL+LHMvffF++xIxwI7g8gCkdcdI",
+        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$WcGrqJTZsirCpPfAVbeehw$s8Doe8dLRXvGUAcDicKsmIZasHHutfbbwjY8EUjorLw",
         "disabled": False,
     }
 }

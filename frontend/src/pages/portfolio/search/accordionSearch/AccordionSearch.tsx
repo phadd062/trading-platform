@@ -17,7 +17,7 @@ const AccordionSearch = ({
 			<Col>
 				<Accordion defaultActiveKey={EVENTKEYONE}>
 					<Accordion.Item eventKey={EVENTKEYONE}>
-						<Accordion.Header>Search Building</Accordion.Header>
+						<Accordion.Header>Search Portfolio Snapshot</Accordion.Header>
 						<Accordion.Body>
 							<SimpleSearch
 								searchState={searchState}
