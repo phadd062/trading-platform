@@ -23,7 +23,7 @@ FAKE_USERS = {
         "username": "admin",
         "full_name": "Peter Haddad",
         "email": "hello@peterhaddad.ca",
-        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$WcGrqJTZsirCpPfAVbeehw$s8Doe8dLRXvGUAcDicKsmIZasHHutfbbwjY8EUjorLw",
+        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$XQFSeBZrFP22p/xH46b7eA$6SloaPLLRVWPDVI3RBbVwaYhbkdGCo9jXEZ6L9m/ffQ",
         "disabled": False,
     }
 }
