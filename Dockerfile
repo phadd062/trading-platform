@@ -2,8 +2,8 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-COPY requirements.txt /app
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --no-dev
 
 COPY libs/ ./libs/
 COPY services/ ./services/
