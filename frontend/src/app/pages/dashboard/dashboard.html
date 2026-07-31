@@ -1,0 +1,30 @@
+@if (portfolio.isLoading()) {
+<app-loading />
+} @else if (portfolio.error()) {
+<div class="alert alert-danger mt-3">Failed to load portfolio data.</div>
+} @else if (momentum(); as momentum_value) {
+<app-page-title>
+  <h2>Portfolio Dashboard</h2>
+  <app-dashboard-buttons />
+</app-page-title>
+
+<div class="row mb-4">
+  <div class="col-sm-6 col-xl-4 col-xxl-4 mb-4">
+    <app-card-display
+      title="Realized PNL"
+      [body]="momentum_value.realized_pnl"
+    />
+  </div>
+  <div class="col-sm-6 col-xl-4 col-xxl-4 mb-4">
+    <app-card-display
+      title="Unrealized PNL"
+      [body]="momentum_value.unrealized_pnl"
+    />
+  </div>
+  <div class="col-sm-6 col-xl-4 col-xxl-4 mb-4">
+    <app-card-display title="Net PNL" [body]="momentum_value.net_pnl" />
+  </div>
+</div>
+
+<app-portfolio-charts [data]="portfolio.value()!" primary="momentum" />
+}

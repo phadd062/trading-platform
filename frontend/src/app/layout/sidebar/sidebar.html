@@ -1,0 +1,55 @@
+<aside id="sidebar" [class.expand]="expanded()">
+  <div class="d-flex">
+    <button (click)="toggleSidebar()" class="toggle-btn" type="button">
+      <fa-icon size="lg" [icon]="faBars" />
+    </button>
+    <div class="sidebar-logo">
+      <a>Trading &amp; Risk</a>
+    </div>
+  </div>
+
+  <ul class="sidebar-nav">
+    <li class="sidebar-item">
+      <a class="sidebar-link" routerLink="/portfolio/dashboard" routerLinkActive="active">
+        <div class="row fw-medium fs-6">
+          <div class="col-2"><fa-icon [icon]="faBuilding" /></div>
+          <div class="col-10"><span>Portfolio Dashboard</span></div>
+        </div>
+      </a>
+    </li>
+
+    <li class="sidebar-item">
+      <a class="sidebar-link" routerLink="/portfolio/search" routerLinkActive="active">
+        <div class="row fw-medium fs-6">
+          <div class="col-2"><fa-icon [icon]="faTags" /></div>
+          <div class="col-10"><span>Portfolio Search</span></div>
+        </div>
+      </a>
+    </li>
+
+    <li class="sidebar-item">
+      <a class="sidebar-link has-dropdown" [class.collapsed]="!extraOpen()" (click)="toggleExtra()">
+        <div class="row fw-medium fs-6">
+          <div class="col-2"><fa-icon [icon]="faExternalLink" /></div>
+          <div class="col-10"><span>Extra</span></div>
+        </div>
+      </a>
+      <ul class="sidebar-dropdown list-unstyled" [class.collapse]="!extraOpen()">
+        <li class="sidebar-item">
+          <a routerLink="/instructions/add" class="sidebar-link">
+            <span>About</span>
+          </a>
+        </li>
+      </ul>
+    </li>
+
+    <li class="sidebar-item">
+      <a (click)="logout()" class="sidebar-link">
+        <div class="row fw-medium fs-6">
+          <div class="col-2"><fa-icon [icon]="faSignOut" /></div>
+          <div class="col-10"><span>Logout</span></div>
+        </div>
+      </a>
+    </li>
+  </ul>
+</aside>

@@ -1,0 +1,12 @@
+<div class="btn-toolbar mb-2 mb-md-0">
+  <div class="btn-group mb-1 d-none d-lg-inline-flex" role="group">
+    @for (strategy of strategies; track strategy) {
+    <a
+      routerLink="/{{ strategy.toLowerCase() }}"
+      class="btn btn-sm btn-outline-secondary"
+    >
+      <fa-icon [icon]="faChartArea" /> {{ strategy }}
+    </a>
+    }
+  </div>
+</div>

@@ -1,0 +1,28 @@
+<div class="row" style="height: 50vh">
+  <div class="d-none d-lg-block col-lg-4 col-xl-4 mt-md-1 mt-lg-2 mt-xl-4">
+    <canvas
+      baseChart
+      type="doughnut"
+      [data]="doughnutData()"
+      [options]="doughnutOptions()"
+    ></canvas>
+  </div>
+
+  <div class="d-none d-sm-block col-lg-8 col-xl-4 mt-md-1 mt-lg-2 mt-xl-4">
+    <canvas
+      baseChart
+      type="bar"
+      [data]="positionsData()"
+      [options]="positionsOptions"
+    ></canvas>
+  </div>
+
+  <div class="d-none d-sm-block col-lg-8 col-xl-4 mt-md-1 mt-lg-2 mt-xl-4">
+    <canvas
+      baseChart
+      type="bar"
+      [data]="avgCostData()"
+      [options]="avgCostOptions"
+    ></canvas>
+  </div>
+</div>

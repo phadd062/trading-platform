@@ -1,0 +1,83 @@
+<app-page-title>
+  <h2>Portfolio Orders</h2>
+</app-page-title>
+
+<div class="row">
+  <div class="col">
+    <div class="accordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button
+            class="accordion-button"
+            [class.collapsed]="!accordionOpen()"
+            type="button"
+            (click)="toggleAccordion()"
+          >
+            Search Portfolio Snapshot
+          </button>
+        </h2>
+        <div class="accordion-collapse collapse" [class.show]="accordionOpen()">
+          <div class="accordion-body">
+            <form (submit)="submit($event)">
+              <div class="row g-2 align-items-center">
+                <div class="col-sm-3">
+                  <input
+                    class="form-control"
+                    placeholder="Strategy"
+                    maxlength="200"
+                    [value]="strategy()"
+                    (input)="strategy.set($any($event.target).value)"
+                  />
+                </div>
+                <div class="col-sm-2">
+                  <input
+                    class="form-control"
+                    placeholder="Symbol"
+                    maxlength="200"
+                    [value]="symbol()"
+                    (input)="symbol.set($any($event.target).value)"
+                  />
+                </div>
+                <div class="col-sm-2">
+                  <input
+                    class="form-control"
+                    placeholder="Side"
+                    maxlength="200"
+                    [value]="side()"
+                    (input)="side.set($any($event.target).value)"
+                  />
+                </div>
+                <div class="col-sm-2">
+                  <input
+                    class="form-control"
+                    placeholder="Order Type"
+                    maxlength="200"
+                    [value]="orderType()"
+                    (input)="orderType.set($any($event.target).value)"
+                  />
+                </div>
+                <div class="col-sm-3 d-sm-grid">
+                  <button class="btn btn-primary" type="submit">
+                    <fa-icon [icon]="faSearch" /> Search
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-3 mt-3">
+  <div class="col">
+    <div class="btn-group">
+      <button (click)="clearFilters()" class="btn btn-sm btn-outline-danger">
+        <fa-icon [icon]="faClockRotateLeft" /> Clear Filters
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-orders-grid />

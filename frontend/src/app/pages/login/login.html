@@ -1,0 +1,76 @@
+@if (showPage()) {
+  <div class="container-fluid">
+    <div
+      class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+    ></div>
+    <div class="row mb-5">
+      <div class="col-12 d-flex justify-content-center d-none d-sm-block">
+        <img src="/images/banner.jpg" class="img-fluid w-100" alt="Trading banner" />
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-10 col-sm-7 col-md-5 col-lg-4 col-xxl-3 mx-auto mt-3">
+        <form (submit)="$event.preventDefault(); onSubmit()" autocomplete="off">
+          <div class="row align-items-center mb-3">
+            <div class="col-xxl-12">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Username"
+                [formField]="loginForm.username"
+                [class.is-invalid]="
+                  loginForm.username().invalid() && loginForm.username().touched()
+                "
+              />
+              @if (
+                loginForm.username().invalid() && loginForm.username().touched()
+              ) {
+                <div class="text-danger small mt-1">Username is required</div>
+              }
+            </div>
+          </div>
+
+          <div class="row align-items-center mb-4">
+            <div class="col-xxl-12 mb-2">
+              <input
+                type="password"
+                class="form-control"
+                placeholder="Password"
+                [formField]="loginForm.password"
+                [class.is-invalid]="
+                  loginForm.password().invalid() && loginForm.password().touched()
+                "
+              />
+              @if (
+                loginForm.password().invalid() && loginForm.password().touched()
+              ) {
+                <div class="text-danger small mt-1">Password is required</div>
+              }
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-12 d-grid">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="loginForm().submitting()"
+              >
+                {{ loginForm().submitting() ? 'Verifying credentials...' : 'Login' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+              <div style="color: red"><p>{{ error() }}</p></div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
