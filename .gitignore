@@ -1,3 +1,4 @@
+.angular/
 .venv/
 tmp/
 __pycache__/
